@@ -13,7 +13,7 @@ Follow these step:
 2. Navigate to *Quản lý học phần > Tra cứu kết quả học tập*
 3. In *Năm học* field choose *Tất cả* and press *Xem kết quả học tập* button
 4. Press `ctrl + S` to save web source (you should save it in this project directory)
-5. Edit *PATH* variable in `.env` file, assign a path to HTML file you saved in the previous step.
+5. Edit *PATH* variable in `.env` file, assign a path of HTML file you saved in the previous step.
 6. Open your command line, move to this project directory and type following command:
 - To install dependencies: `python install -r requirements.txt`
 - To calculate GPA: `python GPAportal.py`
