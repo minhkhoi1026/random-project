@@ -4,8 +4,11 @@ import networkx as nx
 import math
 import json
 
+INPUT_PATH = './mocking_courses.csv'
+OUTPUT_PATH = './mocking_graph.json'
+
 # load data
-df = pd.read_csv('./CQ_TienQuyet_HocTruoc.csv', encoding='utf-8')
+df = pd.read_csv(INPUT_PATH, encoding='utf-8')
 df = df.drop(df.columns[7:], axis = 1).rename(columns = utils.transform)
 df = df.fillna("")
 print(df.head())
@@ -29,7 +32,7 @@ for index, row in df.iterrows():
     course = row.ma_hp
     my_add_edges(G, course, row.ma_hp_hoc_truoc.split(','), 'học trước')
     my_add_edges(G, course, row.ma_hp_tien_quyet.split(','), 'tiên quyết')
-    
-with open('courses.json', 'w', encoding = 'utf-8') as f:
+
+with open(OUTPUT_PATH, 'w', encoding = 'utf-8') as f:
     json.dump(nx.node_link_data(G), f)
 

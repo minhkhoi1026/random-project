@@ -1,0 +1,12 @@
+Mã HP,Tên HP,BMQL,HP học trước,Mã HP học trước,HP tiên quyết,Mã HP tiên quyết,Ghi chú
+CSC00001,Nhập môn công nghệ thông tin 1,LNThành,,,,,
+CSC00002,Nhập môn công nghệ thông tin 2,LNThành,Nhập môn Công nghệ thông tin 1,CSC00001,,,
+CSC00005,Lập trình ứng dụng web với VB.net,TTTH,,,,,
+CSC00007,Thiết kế web,TTTH,,,,,
+CSC10001,Nhập môn lập trình,Trưởng Khoa,,,,,
+CSC10002,Kỹ thuật lập trình,Trưởng Khoa,Nhập môn lập trình,CSC10001,,,
+CSC10003,Phương pháp lập trình hướng đối tượng,CNPM,Nhập môn lập trình,CSC10001,,,
+CSC10004,Cấu trúc dữ liệu và giải thuật,KHMT-CNTT,Kỹ thuật lập trình,CSC10002,,,
+CSC10005,Kiến trúc máy tính và hợp ngữ,MMT,,,,,
+CSC10006,Cơ sở dữ liệu,HTTT,Cấu trúc dữ liệu và giải thuật,CSC10004,,,
+CSC10007,Hệ điều hành,MMT,Kiến trúc máy tính và hợp ngữ,CSC10005,,,
