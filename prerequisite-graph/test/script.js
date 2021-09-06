@@ -1,98 +1,148 @@
-(async () => {
-  // fetch data and render
-  // const resp = await fetch(
-  //   "https://raw.githubusercontent.com/erikbrinkman/d3-dag/main/examples/grafo.json"
-  // );
-  const resp = await fetch(
-    "mocking_graph.json"
-    );
-  const data = await resp.json();
-  const dag_parser = d3.dagConnect()
-                    .sourceId(link => link.source)
-                    .targetId(link => link.target);
-  const dag = dag_parser(data.links);
-  const nodeRadius = 50;
-  const layout = d3
-    .sugiyama() // base layout
-    .decross(d3.decrossOpt()) // minimize number of crossings
-    .nodeSize((node) => [(node ? 3.6 : 0.25) * nodeRadius, 3 * nodeRadius]); // set node size instead of constraining to fit
-  const { width, height } = layout(dag);
+var colors = d3.scaleOrdinal(d3.schemeCategory10);
 
-  // --------------------------------
-  // This code only handles rendering
-  // --------------------------------
-  const svgSelection = d3.select("svg");
-  svgSelection.attr("viewBox", [0, 0, width, height].join(" "));
-  const defs = svgSelection.append("defs"); // For gradients
+var svg = d3.select("svg"),
+    width = +svg.attr("width"),
+    height = +svg.attr("height"),
+    node,
+    link;
 
-  const steps = dag.size();
-  const interp = d3.interpolateRainbow;
-  const colorMap = new Map();
-  for (const [i, node] of dag.idescendants().entries()) {
-    colorMap.set(node.data.id, interp(i / steps));
-  }
+svg.append('defs').append('marker')
+    .attrs({'id':'arrowhead',
+        'viewBox':'-0 -5 10 10',
+        'refX':13,
+        'refY':0,
+        'orient':'auto',
+        'markerWidth':13,
+        'markerHeight':13,
+        'xoverflow':'visible'})
+    .append('svg:path')
+    .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
+    .attr('fill', '#999')
+    .style('stroke','none');
 
-  // How to draw edges
-  const line = d3
-    .line()
-    .curve(d3.curveCatmullRom)
-    .x((d) => d.x)
-    .y((d) => d.y);
+var simulation = d3.forceSimulation()
+    .force("link", d3.forceLink().id(function (d) {return d.id;}).distance(100).strength(1))
+    .force("charge", d3.forceManyBody())
+    .force("center", d3.forceCenter(width / 2, height / 2));
 
-  // Plot edges
-  svgSelection
-    .append("g")
-    .selectAll("path")
-    .data(dag.links())
-    .enter()
-    .append("path")
-    .attr("d", ({ points }) => line(points))
-    .attr("fill", "none")
-    .attr("stroke-width", 3)
-    .attr("stroke", ({ source, target }) => {
-      // encodeURIComponents for spaces, hope id doesn't have a `--` in it
-      const gradId = encodeURIComponent(`${source.data.id}--${target.data.id}`);
-      const grad = defs
-        .append("linearGradient")
-        .attr("id", gradId)
-        .attr("gradientUnits", "userSpaceOnUse")
-        .attr("x1", source.x)
-        .attr("x2", target.x)
-        .attr("y1", source.y)
-        .attr("y2", target.y);
-      grad
-        .append("stop")
-        .attr("offset", "0%")
-        .attr("stop-color", colorMap.get(source.data.id));
-      grad
-        .append("stop")
-        .attr("offset", "100%")
-        .attr("stop-color", colorMap.get(target.data.id));
-      return `url(#${gradId})`;
+d3.json("mocking_graph.json", function (error, graph) {
+    if (error) throw error;
+    update(graph.links, graph.nodes);
+})
+
+function update(links, nodes) {
+    link = svg.selectAll(".link")
+        .data(links)
+        .enter()
+        .append("line")
+        .attr("class", "link")
+        .attr('marker-end','url(#arrowhead)')
+
+    link.append("title")
+        .text(function (d) {return d.type;});
+
+    edgepaths = svg.selectAll(".edgepath")
+        .data(links)
+        .enter()
+        .append('path')
+        .attrs({
+            'class': 'edgepath',
+            'fill-opacity': 0,
+            'stroke-opacity': 0,
+            'id': function (d, i) {return 'edgepath' + i}
+        })
+        .style("pointer-events", "none");
+
+    edgelabels = svg.selectAll(".edgelabel")
+        .data(links)
+        .enter()
+        .append('text')
+        .style("pointer-events", "none")
+        .attrs({
+            'class': 'edgelabel',
+            'id': function (d, i) {return 'edgelabel' + i},
+            'font-size': 10,
+            'fill': '#aaa'
+        });
+
+    edgelabels.append('textPath')
+        .attr('xlink:href', function (d, i) {return '#edgepath' + i})
+        .style("text-anchor", "middle")
+        .style("pointer-events", "none")
+        .attr("startOffset", "50%")
+        //.text(function (d) {return d.type});
+
+    node = svg.selectAll(".node")
+        .data(nodes)
+        .enter()
+        .append("g")
+        .attr("class", "node")
+        .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                //.on("end", dragended)
+        );
+
+    node.append("circle")
+        .attr("r", 10)
+        .style("fill", function (d, i) {return colors(i);})
+
+    node.append("title")
+        .text(function (d) {return d.course_id+": "+d.course_name;});
+
+    // node.append("text")
+    //     .attr("dy", -3)
+    //     .text(function (d) {return d.course_id+": "+d.course_name;});
+
+    simulation
+        .nodes(nodes)
+        .on("tick", ticked);
+
+    simulation.force("link")
+        .links(links);
+}
+
+function ticked() {
+    link
+        .attr("x1", function (d) {return d.source.x;})
+        .attr("y1", function (d) {return d.source.y;})
+        .attr("x2", function (d) {return d.target.x;})
+        .attr("y2", function (d) {return d.target.y;});
+
+    node
+        .attr("transform", function (d) {return "translate(" + d.x + ", " + d.y + ")";});
+
+    edgepaths.attr('d', function (d) {
+        return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y;
     });
 
-  // Select nodes
-  const nodes = svgSelection
-    .append("g")
-    .selectAll("g")
-    .data(dag.descendants())
-    .enter()
-    .append("g")
-    .attr("transform", ({ x, y }) => `translate(${x}, ${y})`);
+    edgelabels.attr('transform', function (d) {
+        if (d.target.x < d.source.x) {
+            var bbox = this.getBBox();
 
-  // Plot node circles
-  nodes
-    .append("circle")
-    .attr("r", nodeRadius)
-    .attr("fill", (n) => colorMap.get(n.data.id));
+            rx = bbox.x + bbox.width / 2;
+            ry = bbox.y + bbox.height / 2;
+            return 'rotate(180 ' + rx + ' ' + ry + ')';
+        }
+        else {
+            return 'rotate(0)';
+        }
+    });
+}
 
-  // Add text to nodes
-  nodes
-    .append("text")
-    .text((d) => d.data.id)
-    .attr("font-weight", "bold")
-    .attr("font-family", "sans-serif")
-    .attr("text-anchor", "middle")
-    .attr("alignment-baseline", "middle")
-    .attr("fill", "white");
-})();
+function dragstarted(d) {
+    if (!d3.event.active) simulation.alphaTarget(0.3).restart()
+    d.fx = d.x;
+    d.fy = d.y;
+}
+
+function dragged(d) {
+    d.fx = d3.event.x;
+    d.fy = d3.event.y;
+}
+
+//    function dragended(d) {
+//        if (!d3.event.active) simulation.alphaTarget(0);
+//        d.fx = undefined;
+//        d.fy = undefined;
+//    }

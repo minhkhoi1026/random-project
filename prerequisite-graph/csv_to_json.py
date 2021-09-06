@@ -4,14 +4,15 @@ import networkx as nx
 import math
 import json
 
-INPUT_PATH = './mocking_courses.csv'
-OUTPUT_PATH = './mocking_graph.json'
+# INPUT_PATH = './mocking_course.csv'
+# OUTPUT_PATH = 'mocking_graph.json'
+INPUT_PATH = './CQ_TienQuyet_HocTruoc.csv'
+OUTPUT_PATH = './graph.json'
 
 # load data
 df = pd.read_csv(INPUT_PATH, encoding='utf-8')
 df = df.drop(df.columns[7:], axis = 1).rename(columns = utils.transform)
 df = df.fillna("")
-print(df.head())
 
 # init nodes for graph
 G = nx.DiGraph()
